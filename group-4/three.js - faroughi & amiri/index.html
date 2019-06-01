@@ -1,0 +1,318 @@
+<html >
+	<head>
+		<meta charset="UTF-8">
+		<title>group4</title>
+		<title>three.js</title>
+		<style>
+			body {
+				margin: 0 auto;
+				overflow: hidden;
+			}
+			canvas {
+				width: 100%;
+				height: 100% }
+		</style>
+	</head>
+
+	<body>
+	<script src="lib/three.js"></script>
+	<script type="text/javascript" src="lib/ShadowMapViewer.js"></script>
+	<script type="text/javascript" src="lib/TrackballControls.js"></script>
+	<script type="text/javascript" src="lib/DragControls.js"></script>
+	<script type="text/javascript" src="lib/OBJLoader.js"></script>
+	<script type="text/javascript" src="lib/HDRCubeTextureLoader.js"></script>
+	<script type="text/javascript" src="lib/LegacyJSONLoader.js"></script>
+
+	<script src="lib/OBJLoader.js"></script>
+	<script src="lib/DDSLoader.js"></script>
+	<script src="lib/MTLLoader.js"></script>
+
+
+
+	<div id="web-gl"></div>
+
+	<script type="text/javascript">
+
+		window.addEventListener('keyup', onDocumentKeyUp, false);
+
+        var width = window.innerWidth;
+        var height = window.innerHeight;
+		var mouse = new THREE.Vector2();
+		var windowHalfX = window.innerWidth / 2;
+		var windowHalfY = window.innerHeight / 2;
+
+		var obj;
+		var container,scene,renderer,camera,controls;
+		var directionalLight,pointLight,ambientLight;
+		var sphereGeometryBall;
+		var Ball,ball,textureBall;
+		var event,objects ;
+		var objectLoader;
+		var texture;
+		var sound,time;
+		var audioLoader;
+		var clock = new THREE.Clock();
+
+        var particles, geometry, materials = [], parameters, i, h, color, sprite, size;
+
+		init();
+		animate();
+
+		function init() {
+			scene = new THREE.Scene();
+			scene.fog = new THREE.Fog(0x231b47, 1, 250);
+
+			camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
+			//  Position and point the camera to the center of the scene
+			camera.position.x = 30;
+			camera.position.y = 90;
+			camera.position.z = 130;
+			camera.lookAt(scene.position);
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setClearColor(new THREE.Color(0x000000));
+			renderer.setSize(width, height);
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			document.body.appendChild(renderer.domElement);
+
+			container = document.getElementById("web-gl");
+			container.appendChild(renderer.domElement);
+
+			controls = new THREE.TrackballControls(camera);
+			controls.rotateSpeed = 1.0;
+			controls.zoomSpeed = 1.2;
+			controls.panSpeed = 0.8;
+			controls.noZoom = false;
+			controls.noPan = false;
+			controls.staticMoving = true;
+			controls.dynamicDampingFactor = 0.3;
+
+			ambientLight = new THREE.AmbientLight(0x3f3c42, 0.3);
+			scene.add(ambientLight);
+
+			pointLight = new THREE.PointLight(0xccc6d3, 1);
+			pointLight.position.set(0, 1, 1);
+			pointLight.castShadow = true;
+			pointLight.shadow.camera.near = 1;
+			pointLight.shadow.camera.far = 200;
+			scene.add(pointLight);
+
+			directionalLight = new THREE.DirectionalLight(0xffffff);
+			directionalLight.position.set(0, 25, 25);
+			directionalLight.castShadow = true;
+			directionalLight.shadow.camera.near = 0.1;
+			directionalLight.shadow.camera.far = 500;
+			directionalLight.shadow.camera.right = 550;
+			directionalLight.shadow.camera.left = -550;
+			directionalLight.shadow.camera.top = 550;
+			directionalLight.shadow.camera.bottom = -550;
+			directionalLight.shadow.mapSize.width = 3048;
+			directionalLight.shadow.mapSize.height = 3048;
+			scene.add(directionalLight);
+
+
+			//  ObjectLoader
+			objectLoader = new THREE.ObjectLoader();
+			objectLoader.load("model/ball.json", function (obj) {
+
+				obj.position.y = 4;
+				obj.position.z = -3;
+				obj.position.x = 30;
+				obj.scale.set(0.5, 0.5, 0.5);
+				obj.rotateY(Math.PI);
+				scene.add(obj);
+
+			})
+
+
+			sphereGeometryBall = new THREE.SphereGeometry(32, 32, 16);
+			materialBall = new THREE.MeshPhongMaterial({shading: THREE.FlatShading, shininess: 0});
+			Ball = new THREE.Mesh(sphereGeometryBall, materialBall);
+			Ball.position.x = 200;
+
+			sphereGeometryball = new THREE.SphereGeometry(9, 32, 16);
+			materialball = new THREE.MeshPhongMaterial({color: 0xfffcfd});
+			ball = new THREE.Mesh(sphereGeometryball, materialball);
+			ball.position.y = 10;
+			ball.castShadow = true;
+			ball.receiveShadow = true;
+
+			scene.add(ball);
+
+
+			//  Surface
+			texture = THREE.ImageUtils.loadTexture('texture/TEXTURE.jpg');
+			texture.wrapS = THREE.RepeatWrapping;
+			texture.wrapT = THREE.RepeatWrapping;
+			texture.magFilter = THREE.NearestFilter;
+			texture.minFilter = THREE.NearestFilter;
+
+			var surface = new THREE.PlaneGeometry(350, 350);
+			var surfaceMaterial = new THREE.MeshPhongMaterial({color: 0xffffff, side: THREE.DoubleSide, map: texture});
+			var surfaceMesh = new THREE.Mesh(surface, surfaceMaterial);
+			surfaceMesh.rotateX(Math.PI / 2);
+			surfaceMesh.position.y = -50;
+			surfaceMesh.receiveShadow = true;
+			scene.add(surfaceMesh);
+
+			var surface1 = new THREE.PlaneGeometry(350, 350);
+			var surfaceMaterial1 = new THREE.MeshPhongMaterial({color: 0xffffff, side: THREE.DoubleSide, map: texture});
+			var surfaceMesh1 = new THREE.Mesh(surface1, surfaceMaterial1);
+			surfaceMesh1.position.z = -100;
+			surfaceMesh1.receiveShadow = true;
+			scene.add(surfaceMesh1);
+
+			var surface2 = new THREE.PlaneGeometry(300, 350);
+			var surfaceMaterial2 = new THREE.MeshPhongMaterial({color: 0xffffff, side: THREE.DoubleSide, map: texture});
+			var surfaceMesh2 = new THREE.Mesh(surface2, surfaceMaterial2);
+			surfaceMesh2.rotateY(Math.PI / 2);
+			surfaceMesh2.position.x = -170;
+			surfaceMesh2.receiveShadow = true;
+			scene.add(surfaceMesh2);
+
+			pointLight = new THREE.PointLight(0x6b7c99, 1);
+			ball.add(pointLight);
+
+
+			//  Add the output of the renderer to the html element
+			document.getElementById("web-gl").appendChild(renderer.domElement);
+
+			var dragControls = new THREE.DragControls(objects, camera, renderer.domElement);
+			dragControls.addEventListener('dragstart', function (event) {
+				controls.enabled = false;
+			});
+			dragControls.addEventListener('dragend', function (event) {
+				controls.enabled = true;
+			});
+
+			//sound!!
+			var listener = new THREE.AudioListener();
+			camera.add(listener);
+
+			audioLoader = new THREE.AudioLoader();
+			sound = new THREE.PositionalAudio(listener);
+			audioLoader.load('sound/Encounter.mp3', function (buffer) {
+				sound.setBuffer(buffer);
+				sound.setRefDistance(60);
+				sound.play();
+			});
+			ball.add(sound);
+
+
+			//  Creating Particles
+            geometry = new THREE.Geometry();
+            var textureLoader = new THREE.TextureLoader();
+            sprite1 = textureLoader.load("texture/snow1.png");
+
+            for (i = 0; i < 10000; i++) {
+
+                var vertex = new THREE.Vector3();
+                vertex.x = Math.random() * 2000 - 1000;
+                vertex.y = Math.random() * 2000 - 1000;
+                vertex.z = Math.random() * 2000 - 1000;
+                geometry.vertices.push(vertex);
+            }
+
+            parameters = [
+                // [[Color in HSL], texture, size
+				[[0.86, 0.04, 0.77], sprite1, 3]
+            ];
+
+            for (i = 0; i < parameters.length; i++) {
+                color = parameters[i][0];
+                sprite = parameters[i][1];
+                size = parameters[i][2];
+                materials[i] = new THREE.PointsMaterial({
+                    size: size,
+                    map: sprite,
+                    blending: THREE.AdditiveBlending,
+                    depthTest: false,
+                    transparent: true
+                });
+
+                materials[i].color.setHSL(color[0], color[1], color[2]);
+                particles = new THREE.Points(geometry, materials[i]);
+                particles.rotation.x = Math.random() * 6;
+                particles.rotation.y = Math.random() * 6;
+                particles.rotation.z = Math.random() * 6;
+                scene.add(particles);
+                renderer.domElement.addEventListener('mouseMove', onDocumentMouseMove, false);
+                window.addEventListener('resize', onWindowResize, false);
+            }
+        }
+			function onDocumentMouseMove(event) {
+				event.preventDefault();
+				mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+				mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+			}
+
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			}
+			/*function clearText() {
+			document.getElementById('message').innerHTML = '....';
+			}
+
+			function appendText(txt) {
+			document.getElementById('message').innerHTML += txt;
+			}*/
+
+			function animate() {
+				time = (Date.now() / 1000);
+				render();
+				update();
+				ball.position.x = Math.sin(time) * 18;
+				ball.position.z = Math.cos(time) * 18;
+				requestAnimationFrame(animate);
+			}
+		function update() {
+			var delta = clock.getDelta(); // seconds.
+			var moveDistance = 200 * delta; // 200 pixels per second
+			var rotateAngle = Math.PI / 2 * delta;   // pi/2 radians (90 degrees) per second
+
+			/*if (keyboard.pressed("left"))
+				MovingCube.position.x -= moveDistance;
+			if (keyboard.pressed("right"))
+				MovingCube.position.x += moveDistance;
+			if (keyboard.pressed("up"))
+				MovingCube.position.z -= moveDistance;
+			if (keyboard.pressed("down"))
+				MovingCube.position.z += moveDistance;
+			var originPoint = MovingCube.position.clone();
+			clearText();
+
+			for (var vertexIndex = 0; vertexIndex < MovingCube.geometry.vertices.length; vertexIndex++) {
+				var localVertex = MovingCube.geometry.vertices[vertexIndex].clone();
+				var globalVertex = localVertex.applyMatrix4(MovingCube.matrix);
+				var directionVector = globalVertex.sub(MovingCube.position);
+
+				var ray = new THREE.Raycaster(originPoint, directionVector.clone().normalize());
+				var collisionResults = ray.intersectObjects(collidableMeshList);
+				if (collisionResults.length > 0 && collisionResults[0].distance < directionVector.length())
+					appendText(" Hit ");*/
+			}
+
+			function render() {
+
+				controls.update();
+				camera.updateMatrixWorld();
+				renderer.render(scene, camera);
+
+			}
+
+			function onDocumentKeyUp(event) {
+
+				if (event.keyCode == 38) {
+					ball.position.y += 5;
+				}
+				if (event.keyCode == 40) {
+					ball.position.y -= 5;
+				}
+				//console.log(event.keyCode);
+			}
+		</script>
+	</body>
+</html>
